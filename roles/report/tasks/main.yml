@@ -1,0 +1,20 @@
+- name: Init credentials
+  command: cat /home/{{ vpn_username }}/{{ credentials_filename }}
+  register: credentials
+  become_user: "{{ vpn_username }}"
+
+- include_tasks: shadowsocks.yml
+
+- include_tasks: wireguard.yml
+
+- name: Render report
+  template:
+    src: templates/vpn.html.j2
+    dest: /home/{{ vpn_username }}/vpn.html
+  become_user: "{{ vpn_username }}"
+
+- name: Download report to local computer
+  ansible.builtin.fetch:
+    src: /home/{{ vpn_username }}/vpn.html
+    dest: "{{ playbook_dir }}/vpn.html"
+  become_user: "{{ vpn_username }}"

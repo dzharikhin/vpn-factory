@@ -1,0 +1,172 @@
+<html>
+  <head>
+      <title>VPN instructions</title>
+      <style>
+        .tabset > input[type="radio"] {
+          position: absolute;
+          left: -200vw;
+        }
+
+        .tabset .tab-panel {
+          display: none;
+        }
+
+        .tabset > input:first-child:checked ~ .tab-panels > .tab-panel:first-child,
+        .tabset > input:nth-child(3):checked ~ .tab-panels > .tab-panel:nth-child(2),
+        .tabset > input:nth-child(5):checked ~ .tab-panels > .tab-panel:nth-child(3),
+        .tabset > input:nth-child(7):checked ~ .tab-panels > .tab-panel:nth-child(4),
+        .tabset > input:nth-child(9):checked ~ .tab-panels > .tab-panel:nth-child(5),
+        .tabset > input:nth-child(11):checked ~ .tab-panels > .tab-panel:nth-child(6) {
+          display: block;
+        }
+
+        body {
+          font: 16px/1.5em "Overpass", "Open Sans", Helvetica, sans-serif;
+          color: #333;
+          font-weight: 300;
+        }
+
+        .tabset > label {
+          position: relative;
+          display: inline-block;
+          padding: 15px 15px 25px;
+          border: 1px solid transparent;
+          border-bottom: 0;
+          cursor: pointer;
+          font-weight: 600;
+        }
+
+        .tabset > label::after {
+          content: "";
+          position: absolute;
+          left: 15px;
+          bottom: 10px;
+          width: 22px;
+          height: 4px;
+          background: #8d8d8d;
+        }
+
+        .tabset > label:hover,
+        .tabset > input:focus + label {
+          color: #06c;
+        }
+
+        .tabset > label:hover::after,
+        .tabset > input:focus + label::after,
+        .tabset > input:checked + label::after {
+          background: #06c;
+        }
+
+        .tabset > input:checked + label {
+          border-color: #ccc;
+          border-bottom: 1px solid #fff;
+          margin-bottom: -1px;
+        }
+
+        .tab-panel {
+          padding: 30px 0;
+          border-top: 1px solid #ccc;
+        }
+
+        /*
+         Demo purposes only
+        */
+        *,
+        *:before,
+        *:after {
+          box-sizing: border-box;
+        }
+
+        body {
+          padding: 30px;
+        }
+
+        .tabset {
+          max-width: 65em;
+        }
+      </style>
+    <script type = "text/javascript">
+      function switchEncoding(button) {
+        if (button.name === 'Decode') {
+          button.previousSibling.innerText = btoa(button.previousSibling.innerText);
+          button.name = 'Encode';
+          button.value = 'Encode';
+        } else {
+          button.previousSibling.innerText = atob(button.previousSibling.innerText);
+          button.name = 'Decode';
+          button.value = 'Decode';
+        }
+      }
+    </script>
+  </head>
+
+  <body>
+    <div class="tabset">
+      <input type="radio" name="tabset" id="common_info" aria-controls="common_info" checked>
+      <label for="common_info">Common info</label>
+{% if shadowsocks_configs %}
+      <input type="radio" name="tabset" id="shadowsocks" aria-controls="shadowsocks">
+      <label for="shadowsocks">Shadowsocks</label>
+{% endif %}
+{% if wireguard_configs %}
+      <input type="radio" name="tabset" id="wireguard" aria-controls="shadowsocks">
+      <label for="wireguard">Wireguard</label>
+{% endif %}
+
+      <div class="tab-panels">
+        <section id="common_info" class="tab-panel">
+          <h2>Please, save this page to your personal device, so you are able to access it without Internet access</h2>
+          <p>On next tabs you will find instructions and settings to connect your devices to the vpn. Install software required proactively while you have Internet access</p>
+          <h3>If you need to access server manually</h3>
+          <p>here are credentials encoded in base64. If you need manual access, I'm sure you're familiar with this thing)</p>
+          <code>{{ credentials.stdout | b64encode }}</code>
+        </section>
+{% if shadowsocks_configs %}
+        <section id="shadowsocks" class="tab-panel">
+          <h2><a href="https://shadowsocks.org/">Shadowsocks</a> - best publicly available solution to prevail against censorship</h2>
+          <h3>Client Downloads</h3>
+          <p>Application stores or <a href="https://github.com/orgs/shadowsocks/repositories">project pages</a></p>
+          <h3>Settings</h3>
+          <p>In most cases qr-code is enough, but also text configs are available</p>
+          <ul>
+{% for config in shadowsocks_configs %}
+            <li>
+              <div>
+                <span class="textconfig"><code>{{ config.b64cfg }}</code><button type="button" onclick="switchEncoding(this)">Decode</button></span>
+                <div>
+                  <img src="data:image/jpeg;base64, {{ config.b64qr }}"/>
+                </div>
+              </div>
+            </li>
+{% endfor %}
+          </ul>
+        </section>
+{% endif %}
+{% if wireguard_configs %}
+        <section id="wireguard" class="tab-panel">
+          <h2><a href="https://www.wireguard.com/">Wireguard</a> is a lightweight vpn(good for battery), but detectable hence can be blocked</h2>
+          <h3>Client Downloads</h3>
+          <p>Application stores or <a href="https://www.wireguard.com/repositories/">project pages</a></p>
+          <h3>Settings</h3>
+          <p>In most cases qr-code is enough, but also text configs are available</p>
+          <ul>
+{% for config in wireguard_configs %}
+            <li>
+              <div>
+                <span class="textconfig"><code>{{ config.b64cfg }}</code><button type="button" onclick="switchEncoding(this)">Decode</button></span>
+                <div>
+                  <img src="data:image/jpeg;base64, {{ config.b64qr }}"/>
+                </div>
+              </div>
+            </li>
+{% endfor %}
+          </ul>
+        </section>
+{% endif %}
+      </div>
+
+    </div>
+  </body>
+</html>
+
+<p><small>Created with: <cite><a href="https://github.com/dzharikhin/vpn-factory">https://github.com/dzharikhin/vpn-factory</a></cite></small></p>

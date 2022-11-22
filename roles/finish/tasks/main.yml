@@ -1,0 +1,3 @@
+- name: Finish setup
+  debug:
+    msg: Now you should see folder vpn.html. Inside there is {{ ansible_host }}/home/{{ vpn_username }}/vpn.html with all instructions to setup your devices. Good luck

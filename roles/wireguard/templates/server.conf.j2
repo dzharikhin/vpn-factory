@@ -1,0 +1,12 @@
+[Interface]
+PrivateKey = {{ wireguard_server.private_key }}
+Address = {{ wireguard_server.address }}/24
+ListenPort = {{ wireguard_server.port }}
+PostUp = iptables -A FORWARD -i wg0 -j ACCEPT; iptables -t nat -A POSTROUTING -o {{ ansible_default_ipv4.interface }} -j MASQUERADE # Add forwarding when VPN is started
+PostDown = iptables -D FORWARD -i wg0 -j ACCEPT; iptables -t nat -D POSTROUTING -o {{ ansible_default_ipv4.interface }} -j MASQUERADE # Remove forwarding when VPN is shutdown
+
+{% for peer in wireguard_peers %}
+[Peer]
+PublicKey = {{ peer.public_key }}
+AllowedIPs = {{ wireguard_server.address | ansible.utils.ipmath(peer.index) }}
+{% endfor %}

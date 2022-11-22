@@ -1,0 +1,22 @@
+- name: Check if shadowsocks rendered
+  ansible.builtin.stat:
+    path: /home/{{ vpn_username }}/{{ shadowsocks_client_foldername }}
+  register: shadowsocks_client_dir
+  become_user: "{{ vpn_username }}"
+
+- name: Build shadowsocks config
+  block:
+    - name: init
+      set_fact:
+        shadowsocks_configs: []
+    - name: get configs
+      ansible.builtin.shell:
+        cmd: ls {{ shadowsocks_client_dir.stat.path }}/*.json
+      register: shadowsocks_json_paths
+    - name: fill
+      include_tasks: "fill_shadowsocks_configs.yml"
+      loop: "{{ shadowsocks_json_paths.stdout_lines }}"
+      loop_control:
+        loop_var: config
+      when: shadowsocks_client_dir.stat.isdir is defined and shadowsocks_client_dir.stat.isdir
+  become_user: "{{ vpn_username }}"

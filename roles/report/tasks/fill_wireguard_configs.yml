@@ -1,0 +1,11 @@
+- name: get config {{ config }} content
+  command: cat {{ config }}
+  register: config_content
+
+- name: get {{ config }} qr content
+  command: base64 {{ (config | split('.'))[0] + '.png' }}
+  register: qr_content
+
+- name: fill
+  set_fact:
+    wireguard_configs: "{{ wireguard_configs + [{'b64cfg': (config_content.stdout | b64encode), 'b64qr': qr_content.stdout}] }}"

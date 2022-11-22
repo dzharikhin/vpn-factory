@@ -1,0 +1,65 @@
+- name: Reserve wireguard port range
+  set_fact:
+    wireguard_server_port: "{{ wireguard_vpn_port | int }}"
+
+- name: Initialize wireguard private keys
+  shell: wg genkey
+  register: wireguard_private_keys
+  loop: "{{ range(wireguard_endpoints_amount + 1)|list }}" # +1 for server
+
+- name: Initialize wireguard public keys
+  shell: echo {{ wireguard_private_keys.results[item].stdout }} | wg pubkey
+  register: wireguard_public_keys
+  loop: "{{ range(wireguard_endpoints_amount + 1)|list }}" # +1 for server
+
+- name: Build server object
+  set_fact:
+    wireguard_server:
+      address: "{{ wireguard_server_address }}"
+      port: "{{ wireguard_server_port }}"
+      private_key: "{{ wireguard_private_keys.results[0].stdout }}"
+      public_key: "{{ wireguard_public_keys.results[0].stdout }}"
+
+- name: Build peer objects
+  block:
+    - name: fill
+      set_fact:
+        wireguard_peers: "{{ (wireguard_peers | default([])) + [dict(['index', 'private_key', 'public_key'] | zip([item, wireguard_private_keys.results[item].stdout, wireguard_public_keys.results[item].stdout]))] }}"
+      loop: "{{ range(1, wireguard_endpoints_amount + 1)|list }}"
+
+- name: Render server config
+  template: src=templates/server.conf.j2 dest=/etc/wireguard/wg0.conf mode=600
+
+- name: Configure dnsmasq config
+  template: src=templates/dnsmasq_wg.conf.j2 dest=/etc/dnsmasq.d/wg.conf
+
+- name: "Enable ipv4 forwarding"
+  sysctl:
+    name: net.ipv4.ip_forward
+    value: 1
+
+- include_tasks: systemd.yml
+  when: ansible_distribution == "Ubuntu"
+
+- name: Render client configs
+  block:
+    - name: clear client config directory
+      ansible.builtin.file:
+        path: /home/{{ vpn_username }}/{{ wireguard_client_foldername }}
+        state: absent
+    - name: create client config directory
+      ansible.builtin.file:
+        path: /home/{{ vpn_username }}/{{ wireguard_client_foldername }}
+        state: directory
+    - name: Render client config
+      include_tasks: "render_client_config.yml"
+      loop: "{{ wireguard_peers }}"
+      loop_control:
+        loop_var: peer
+  become_user: "{{ vpn_username }}"
+
+- name: Add firewall allowed port
+  ansible.builtin.lineinfile:
+    path: /home/{{ vpn_username }}/{{ firewall_allowed_ports_filename }}
+    line: "{{ wireguard_server_port }}"
+    state: present

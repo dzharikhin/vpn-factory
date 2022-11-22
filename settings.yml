@@ -1,0 +1,9 @@
+server:
+  hosts:
+    93.185.166.225: # your server address
+      ansible_user: root # your server login
+      ansible_ssh_pass: iH1hN9hG4wyX # your server password
+      # settings below set the number of vpn endpoints. usually each device requires own endpoint, but server resources are limited, So, keep balance
+      wireguard_endpoints_amount: 1  # lightweight, works in Russia, but blocked in countries with strong censorship
+      shadowsocks_endpoints_amount: 1 # best publicly available solution from our chinese colleagues
+

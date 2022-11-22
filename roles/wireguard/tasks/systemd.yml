@@ -1,0 +1,11 @@
+- name: Restart wireguard server
+  ansible.builtin.systemd:
+    state: restarted
+    enabled: yes
+    name: wg-quick@wg0
+
+- name: Restart dnsmasq
+  ansible.builtin.systemd:
+    state: restarted
+    enabled: yes
+    name: dnsmasq
