@@ -1,0 +1,7 @@
+- name: Restart sshd service
+  ansible.builtin.systemd:
+    state: restarted
+    enabled: yes
+    name: sshd
+  # should fail because of auth method change
+  ignore_errors: yes

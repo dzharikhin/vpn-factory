@@ -1,0 +1,24 @@
+- hosts: server
+  roles:
+    - env
+    - role: wireguard
+      when: wireguard_endpoints_amount > 0
+    - role: shadowsocks
+      when: shadowsocks_endpoints_amount > 0
+    - report
+    - security
+    - finish
+  vars:
+    ansible_ssh_extra_args: "-o StrictHostKeyChecking=no"
+    vpn_username: vpn
+    print_secure_values_verbosity_level: 1
+    firewall_allowed_ports_filename: firewall_allowed_ports
+    credentials_filename: credentials
+    wireguard_client_foldername: wireguard
+    shadowsocks_client_foldername: shadowsocks-rust/client
+    # reserve port range per technology to avoid conflicts
+    wireguard_vpn_port: 51600
+    shadowsocks_vpn_port: 51700
+    wireguard_server_address: 192.168.10.1
+  become_method: sudo
+  become: yes

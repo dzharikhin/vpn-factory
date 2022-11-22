@@ -1,0 +1,22 @@
+- name: Check if wireguard rendered
+  ansible.builtin.stat:
+    path: /home/{{ vpn_username }}/{{ wireguard_client_foldername }}
+  register: wireguard_client_dir
+  become_user: "{{ vpn_username }}"
+
+- name: Build wireguard config
+  block:
+    - name: init
+      set_fact:
+        wireguard_configs: []
+    - name: get configs
+      ansible.builtin.shell:
+        cmd: ls {{ wireguard_client_dir.stat.path }}/*.conf
+      register: wireguard_conf_paths
+    - name: fill
+      include_tasks: "fill_wireguard_configs.yml"
+      loop: "{{ wireguard_conf_paths.stdout_lines }}"
+      loop_control:
+        loop_var: config
+      when: wireguard_client_dir.stat.isdir is defined and wireguard_client_dir.stat.isdir
+  become_user: "{{ vpn_username }}"

@@ -1,0 +1,8 @@
+{
+    "server": "{{ ansible_host }}",
+    "server_port": {{ peer.port }},
+    "password": "{{ peer.password }}",
+    "method": "chacha20-ietf-poly1305",
+    "local_port": 1080,
+    "plugin": "v2ray-plugin"
+}

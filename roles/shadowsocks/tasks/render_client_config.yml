@@ -1,0 +1,9 @@
+- name: render configuration for {{ peer.password }}
+  template: src=templates/client.json.j2 dest=/home/{{ vpn_username }}/{{ shadowsocks_client_foldername }}/{{ peer.password }}.json mode=600
+  become_user: "{{ vpn_username }}"
+
+- name: render qr-code for {{ peer.password }}
+  ansible.builtin.shell:
+    cmd: echo -n ss://{{ ('chacha20-ietf-poly1305:' + peer.password) | b64encode }}@{{ ansible_host }}:{{ peer.port }}?plugin=v2ray-plugin | qrencode -t png -o {{ peer.password }}.png
+    chdir: "/home/{{ vpn_username }}/{{ shadowsocks_client_foldername }}"
+  become_user: "{{ vpn_username }}"
