@@ -1,0 +1,45 @@
+- name: Check allowed ports
+  block:
+    - name: get allowed ports file attributes
+      ansible.builtin.stat:
+        path: /home/{{ vpn_username }}/{{ firewall_allowed_ports_filename }}
+      register: allowed_ports_file
+    - name: fail if no file
+      fail:
+        msg: No {{ firewall_allowed_ports_filename }} file
+      when: not allowed_ports_file.stat.exists
+    - name: load ports
+      ansible.builtin.shell:
+        cmd: cat {{ allowed_ports_file.stat.path }}
+      register: allowed_ports
+    - name: print(debug)
+      debug:
+        var: allowed_ports
+    - name: fail if corrupted
+      fail:
+        msg: No ssh port in allowed!
+      when: "'22' not in allowed_ports.stdout_lines"
+
+- name: Allow only ports in use
+  community.general.ufw:
+    rule: allow
+    port: "{{ item }}"
+    state: enabled
+  loop: "{{ allowed_ports.stdout_lines }}"
+
+- name: Disable root login over SSH
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: "^PermitRootLogin"
+    line: "PermitRootLogin no"
+    state: present
+
+- name: Disable password login
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: "^PasswordAuthentication"
+    line: "PasswordAuthentication no"
+    state: present
+
+- include_tasks: systemd.yml
+  when: ansible_distribution == "Ubuntu"

@@ -1,0 +1,9 @@
+[Interface]
+PrivateKey = {{ peer.private_key }}
+Address = {{ wireguard_server.address | ansible.utils.ipmath(peer.index) }}
+DNS = {{ wireguard_server_address }}
+
+[Peer]
+PublicKey = {{ wireguard_server.public_key }}
+Endpoint = {{ ansible_host }}:{{ wireguard_server.port }}
+AllowedIPs = 0.0.0.0/0

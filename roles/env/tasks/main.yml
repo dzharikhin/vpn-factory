@@ -1,0 +1,63 @@
+- name: Ensure group "docker" exists
+  ansible.builtin.group:
+    name: docker
+    state: present
+
+- name: Generate vpn user password
+  block:
+    - name: generate
+      set_fact:
+        vpn_user_pwd: "{{ lookup('ansible.builtin.password', '/dev/null length=10') }}"
+    - name: print password(debug)
+      debug:
+        msg: "{{ vpn_user_pwd }}"
+        verbosity: "{{ print_secure_values_verbosity_level }}"
+
+- name: Create user with SSH key
+  block:
+    - name: create user
+      ansible.builtin.user:
+        name: "{{ vpn_username }}"
+        generate_ssh_key: yes
+        ssh_key_bits: 4096
+        ssh_key_file: .ssh/id_rsa
+        groups: sudo,docker
+        append: yes
+        password: "{{ vpn_user_pwd | password_hash('sha512') }}"
+      register: created_user
+    - name: allow to auth with SSH key
+      ansible.builtin.shell:
+        cmd: cat id_rsa.pub > authorized_keys
+        chdir: "/home/{{ vpn_username }}/.ssh/"
+    - name: private ssh key into ansible variable
+      command: cat {{ created_user.ssh_key_file }}
+      register: ssh_private_key
+    - name: print keys to console(debug)
+      debug:
+        msg: "{{ ssh_private_key }}|||{{ created_user.ssh_public_key }}"
+        verbosity: "{{ print_secure_values_verbosity_level }}"
+
+- name: Define template root for os
+  block:
+    - name: set path
+      set_fact:
+        osconfig_template_root: templates/{{ ansible_distribution | lower }}/{{ ansible_distribution_major_version }}
+    - name: check required templates exist
+      fail:
+        msg: Can not find templates in {{ osconfig_template_root }}
+      when: "(role_path + '/' + osconfig_template_root) is not exists"
+
+- include_tasks: ubuntu22.yml
+  when: ansible_distribution == "Ubuntu" and ansible_distribution_major_version == "22"
+
+- name: Prepare firewall allowed ports
+  template: src=templates/credentials.j2 dest=/home/{{ vpn_username }}/{{ credentials_filename }} mode=600
+  become_user: "{{ vpn_username }}"
+
+- name: Prepare credentials
+  template: src=templates/firewall_allowed_ports.j2 dest=/home/{{ vpn_username }}/{{ firewall_allowed_ports_filename }} mode=600
+  become_user: "{{ vpn_username }}"
+
+- name: Reboot server
+  ansible.builtin.reboot:
+  when: reboot_required_file.stat.exists

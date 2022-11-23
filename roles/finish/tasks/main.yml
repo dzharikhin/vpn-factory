@@ -1,0 +1,3 @@
+- name: Finish setup
+  debug:
+    msg: Now you should see file vpn.html near to settings.yml. It contains all required instructions to setup VPN on your devices. Good luck

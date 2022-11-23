@@ -1,0 +1,27 @@
+- name: Load credentials
+  block:
+    - name: load in memory
+      command: cat /home/{{ vpn_username }}/{{ credentials_filename }}
+      register: credentials
+    - name: delete file
+      ansible.builtin.file:
+        path: /home/{{ vpn_username }}/{{ credentials_filename }}
+        state: absent
+  become_user: "{{ vpn_username }}"
+
+- include_tasks: shadowsocks.yml
+
+- include_tasks: wireguard.yml
+
+- name: Render report
+  template:
+    src: templates/vpn.html.j2
+    dest: /home/{{ vpn_username }}/vpn.html
+  become_user: "{{ vpn_username }}"
+
+- name: Download report to local computer
+  ansible.builtin.fetch:
+    src: /home/{{ vpn_username }}/vpn.html
+    dest: "{{ playbook_dir }}/"
+    flat: true
+  become_user: "{{ vpn_username }}"

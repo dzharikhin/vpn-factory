@@ -1,0 +1,7 @@
+- name: render configuration for public key {{ peer.public_key }}
+  template: src=templates/client.conf.j2 dest=/home/{{ vpn_username }}/{{ wireguard_client_foldername }}/wg-client{{ peer.index }}.conf mode=600
+
+- name: render qr-code for public key {{ peer.public_key }}
+  ansible.builtin.shell:
+    cmd: qrencode -t png -o wg-client{{ peer.index }}.png < wg-client{{ peer.index }}.conf
+    chdir: "/home/{{ vpn_username }}/{{ wireguard_client_foldername }}/"

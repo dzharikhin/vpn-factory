@@ -1,0 +1,68 @@
+- name: Reserve shadowsocks port range
+  set_fact:
+    shadowsocks_first_port: "{{ shadowsocks_vpn_port | int }}"
+
+- name: Build shadowsocks peer objects
+  block:
+    - name: ports
+      set_fact:
+        shadowsocks_ports: "{{ (shadowsocks_ports | default([])) + [(shadowsocks_first_port  | int) + item] }}"
+      loop: "{{ range(shadowsocks_endpoints_amount) }}"
+    - name: passwords
+      set_fact:
+        shadowsocks_passwords: "{{ (shadowsocks_passwords | default([])) + [lookup('ansible.builtin.password', '/dev/null length=10 chars=ascii_letters,digits')] }}"
+      loop: "{{ range(shadowsocks_endpoints_amount) }}"
+    - name: fill
+      set_fact:
+        shadowsocks_peers: "{{ (shadowsocks_peers | default([])) + [dict(['port', 'password'] | zip([shadowsocks_ports[item], shadowsocks_passwords[item]]))] }}"
+      loop: "{{ range(shadowsocks_endpoints_amount) }}"
+
+- name: Render server config
+  block:
+    - name: create shadowsocks server directory
+      ansible.builtin.file:
+        path: /home/{{ vpn_username }}/shadowsocks-rust
+        state: directory
+    - name: render
+      template: src=templates/server.json.j2 dest=/home/{{ vpn_username }}/shadowsocks-rust/config.json
+  become_user: "{{ vpn_username }}"
+
+- name: Render server compose
+  template: src=templates/docker-compose.yml.j2 dest=/home/{{ vpn_username }}/shadowsocks-rust/docker-compose.yml
+  become_user: "{{ vpn_username }}"
+
+- name: Run shadowsocks-rust docker
+  block:
+    - name: compose
+      community.docker.docker_compose:
+        project_name: shadowsocks-rust
+        project_src: /home/{{ vpn_username }}/shadowsocks-rust
+        restarted: yes
+      register: docker_output
+    - name: print output
+      debug:
+        var: docker_output
+  become_user: "{{ vpn_username }}"
+
+- name: Render client config
+  block:
+    - name: clear shadowsocks client directory
+      ansible.builtin.file:
+        path: /home/{{ vpn_username }}/{{ shadowsocks_client_foldername }}
+        state: absent
+    - name: create shadowsocks client directory
+      ansible.builtin.file:
+        path: /home/{{ vpn_username }}/{{ shadowsocks_client_foldername }}
+        state: directory
+    - name: render
+      include_tasks: "render_client_config.yml"
+      loop: "{{ shadowsocks_peers }}"
+      loop_control:
+        loop_var: peer
+  become_user: "{{ vpn_username }}"
+
+- name: Add firewall allowed ports
+  ansible.builtin.lineinfile:
+    path: /home/{{ vpn_username }}/{{ firewall_allowed_ports_filename }}
+    line: "{{ shadowsocks_ports | join('\n') }}"
+    state: present
