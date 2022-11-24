@@ -4,6 +4,6 @@ server:
       ansible_user: root # your server login, usually root
       ansible_ssh_pass: remote_server_password # your server password
       # settings below set the number of vpn endpoints. usually each device requires own endpoint, but server resources are limited, So, keep balance
-      wireguard_endpoints_amount: 10  # lightweight, works in Russia, but blocked in countries with strong censorship
+      wireguard_endpoints_amount: 5  # lightweight, works in Russia, but blocked in countries with strong censorship
       shadowsocks_endpoints_amount: 5 # more resource intensive, but proved to work in Iran
 

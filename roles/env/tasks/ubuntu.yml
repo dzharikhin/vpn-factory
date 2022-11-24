@@ -1,6 +1,17 @@
+- name: Validate version
+  fail:
+    msg: Ubuntu versions older than 18 are not supported
+  when: ansible_distribution_major_version is version('18', '<')
+
 - name: Disable resolved stub on port 53
   block:
-    - name: patch resolved config
+    - name: switch dns to external source
+      ansible.builtin.file:
+        src: /run/systemd/resolve/resolv.conf
+        dest: /etc/resolv.conf
+        state: link
+        force: true
+    - name: disable listener
       ansible.builtin.lineinfile:
         path: /etc/systemd/resolved.conf
         regexp: "^#DNSStubListener="
@@ -11,6 +22,12 @@
         state: restarted
         enabled: yes
         name: systemd-resolved
+
+- name: Install tools to add repo
+  ansible.builtin.apt:
+    update_cache: yes
+    pkg:
+      - gnupg
 
 - name: Install docker repo
   block:

@@ -1,5 +1,5 @@
 # Prerequisites
-- remote server on Ubuntu 22 OS(can be ported to other distros in short time)
+- remote server on Ubuntu OS(tested on versions: 18, 20, 22) - can be ported to other distros later
 - remote server credentials: ip-address, login and password
 - [docker](https://www.docker.com/) installed to your local computer
 
