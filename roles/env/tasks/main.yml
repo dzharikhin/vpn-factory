@@ -1,3 +1,13 @@
+- name: Check if distributive is supported
+  block:
+    - name: set path
+      set_fact:
+        osconfig_template_root: templates/{{ ansible_distribution | lower }}
+    - name: check required templates exist
+      fail:
+        msg: "{{ ansible_distribution }} os is not supported"
+      when: "(role_path + '/' + osconfig_template_root) is not exists"
+
 - name: Ensure group "docker" exists
   ansible.builtin.group:
     name: docker
@@ -37,18 +47,8 @@
         msg: "{{ ssh_private_key }}|||{{ created_user.ssh_public_key }}"
         verbosity: "{{ print_secure_values_verbosity_level }}"
 
-- name: Define template root for os
-  block:
-    - name: set path
-      set_fact:
-        osconfig_template_root: templates/{{ ansible_distribution | lower }}/{{ ansible_distribution_major_version }}
-    - name: check required templates exist
-      fail:
-        msg: Can not find templates in {{ osconfig_template_root }}
-      when: "(role_path + '/' + osconfig_template_root) is not exists"
-
-- include_tasks: ubuntu22.yml
-  when: ansible_distribution == "Ubuntu" and ansible_distribution_major_version == "22"
+- include_tasks: ubuntu.yml
+  when: ansible_distribution == "Ubuntu"
 
 - name: Prepare firewall allowed ports
   template: src=templates/credentials.j2 dest=/home/{{ vpn_username }}/{{ credentials_filename }} mode=600
