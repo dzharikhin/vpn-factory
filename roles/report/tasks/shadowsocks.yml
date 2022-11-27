@@ -13,6 +13,7 @@
       ansible.builtin.shell:
         cmd: ls {{ shadowsocks_client_dir.stat.path }}/*.json
       register: shadowsocks_json_paths
+      when: shadowsocks_client_dir.stat.isdir is defined and shadowsocks_client_dir.stat.isdir
     - name: fill
       include_tasks: "fill_shadowsocks_configs.yml"
       loop: "{{ shadowsocks_json_paths.stdout_lines }}"
