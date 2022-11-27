@@ -13,6 +13,7 @@
       ansible.builtin.shell:
         cmd: ls {{ wireguard_client_dir.stat.path }}/*.conf
       register: wireguard_conf_paths
+      when: wireguard_client_dir.stat.isdir is defined and wireguard_client_dir.stat.isdir
     - name: fill
       include_tasks: "fill_wireguard_configs.yml"
       loop: "{{ wireguard_conf_paths.stdout_lines }}"
