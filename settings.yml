@@ -1,6 +1,6 @@
 server:
   hosts:
-    remote_server_ip: # your remote server address, something like 192.168.1.1
+    192.168.1.1: # your remote server ip address
       ansible_user: root # your server login, usually root
       ansible_ssh_pass: remote_server_password # your server password
       # settings below set the number of vpn endpoints. usually each device requires own endpoint, but server resources are limited, So, keep balance
