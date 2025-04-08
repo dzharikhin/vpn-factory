@@ -1,3 +1,5 @@
+> for more advanced users its reasonable to have a look on https://github.com/MHSanaei/3x-ui first
+
 # Prerequisites
 - remote server on Ubuntu OS(tested on versions: 18, 20, 22) - can be ported to other distros later
 - remote server credentials: ip-address, login and password
